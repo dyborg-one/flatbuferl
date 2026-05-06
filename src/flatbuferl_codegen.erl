@@ -250,26 +250,16 @@ generate_message_encode(FunSuffix, TypeStr, Required, Optional) ->
     FieldsMap =
         case {HasReq, HasOpt} of
             {true, true} ->
+                OptKeys = [atom_to_list(F#field_def.name) || F <- Optional],
+                OptKeysStr = lists:join(", ", OptKeys),
                 [
                     "    Fields0 = #{\n",
                     ReqFieldsBlock,
                     "\n",
                     "    },\n",
-                    "    Fields1 = lists:foldl(\n",
-                    "        fun({K, V}, Acc) ->\n",
-                    "            case V of\n",
-                    "                undefined -> Acc;\n",
-                    "                _ -> Acc#{K => V}\n",
-                    "            end\n",
-                    "        end,\n",
-                    "        Fields0,\n",
-                    "        [",
-                    lists:join(",\n         ",
-                               [["{", atom_to_list(F#field_def.name), ", maps:get(",
-                                 atom_to_list(F#field_def.name), ", Opts, undefined)}"]
-                                || F <- Optional]),
-                    "]\n",
-                    "    ),\n"
+                    "    Fields1 = maps:merge(\n",
+                    "        maps:with([", OptKeysStr, "], Opts),\n",
+                    "        Fields0),\n"
                 ];
             {true, false} ->
                 [
@@ -279,23 +269,10 @@ generate_message_encode(FunSuffix, TypeStr, Required, Optional) ->
                     "    },\n"
                 ];
             {false, true} ->
+                OptKeys = [atom_to_list(F#field_def.name) || F <- Optional],
+                OptKeysStr = lists:join(", ", OptKeys),
                 [
-                    "    Fields0 = #{},\n",
-                    "    Fields = lists:foldl(\n",
-                    "        fun({K, V}, Acc) ->\n",
-                    "            case V of\n",
-                    "                undefined -> Acc;\n",
-                    "                _ -> Acc#{K => V}\n",
-                    "            end\n",
-                    "        end,\n",
-                    "        Fields0,\n",
-                    "        [",
-                    lists:join(",\n         ",
-                               [["{", atom_to_list(F#field_def.name), ", maps:get(",
-                                 atom_to_list(F#field_def.name), ", Opts, undefined)}"]
-                                || F <- Optional]),
-                    "]\n",
-                    "    ),\n"
+                    "    Fields = maps:with([", OptKeysStr, "], Opts),\n"
                 ];
             {false, false} ->
                 ["    Fields = #{},\n"]
