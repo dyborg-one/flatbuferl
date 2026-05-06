@@ -24,14 +24,18 @@
 %%   - encode_<type>/N, decode_<type>/1 for each Message union member
 %%
 %% Example:
-%%   {ok, Schema} = flatbuferl:parse_schema_file("schema/protocol.fbs"),
-%%   ok = flatbuferl_codegen:schema_to_module(Schema, mearum_port_protocol).
+%%   {ok, Schema} = flatbuferl:parse_schema_file("schema/my_protocol.fbs"),
+%%   ok = flatbuferl_codegen:schema_to_module(Schema, my_protocol).
 %%
-%% Writes `mearum_port_protocol.erl` to the current directory.
+%% Writes `my_protocol.erl` to the current directory.
 -spec schema_to_module(flatbuferl:schema(), module()) -> ok | {error, term()}.
-schema_to_module({_Defs, _Opts} = Schema, ModuleName) ->
+schema_to_module(Schema, ModuleName) ->
+    schema_to_module(Schema, ModuleName, ".").
+
+-spec schema_to_module(flatbuferl:schema(), module(), file:filename()) -> ok | {error, term()}.
+schema_to_module({_Defs, _Opts} = Schema, ModuleName, OutDir) ->
     ModuleStr = atom_to_list(ModuleName),
-    FileName = ModuleStr ++ ".erl",
+    FileName = filename:join(OutDir, ModuleStr ++ ".erl"),
     Content = schema_module_content(ModuleName, Schema),
     case file:write_file(FileName, unicode:characters_to_binary(Content)) of
         ok -> ok;
